@@ -1,9 +1,15 @@
 <template>
-    <div class="font-sans bg-gradient-to-br from-slate-50 to-gray-100 text-slate-800 py-12 px-6 antialiased min-h-screen selection:bg-indigo-100 selection:text-indigo-900">
-        <div v-if="!activeTool" class="max-w-[900px] mx-auto">
-            <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-5 mb-10 pb-6 border-b border-slate-200/80">
+    <div class="py-6 sm:py-12 px-4 sm:px-6 min-h-screen relative">
+        <Transition 
+            :css="false" 
+            mode="out-in" 
+            @leave="onLeave" 
+            @enter="onEnter"
+        >
+        <div v-if="!activeTool" key="hub" class="max-w-[900px] mx-auto">
+            <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-5 mb-8 sm:mb-10 pb-6 border-b border-slate-200/80">
                 <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-slate-900 to-slate-700 text-white flex items-center justify-center shadow-md shadow-slate-900/20">
+                    <div class="w-12 h-12 shrink-0 rounded-2xl bg-gradient-to-tr from-slate-900 to-slate-700 text-white flex items-center justify-center shadow-md shadow-slate-900/20">
                         <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
                             <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
@@ -12,7 +18,7 @@
                         </svg>
                     </div>
                     <div>
-                        <h1 class="text-2xl font-bold tracking-tight text-slate-900 m-0">Project Workspace</h1>
+                        <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 m-0">Project Workspace</h1>
                         <p class="text-sm text-slate-500 m-0 mt-0.5">Select an application or tool to launch</p>
                     </div>
                 </div>
@@ -22,7 +28,7 @@
                         type="text" 
                         v-model="searchQuery"
                         placeholder="Search tools..." 
-                        class="w-full bg-white border border-slate-200 rounded-xl text-sm py-2.5 px-4 pl-10 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-sm"
+                        class="w-full bg-white border border-slate-200 rounded-xl text-sm py-2.5 px-4 pl-10 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all shadow-sm"
                     >
                     <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="11" cy="11" r="8"></circle>
@@ -31,29 +37,29 @@
                 </div>
             </header>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
                 <div v-if="filteredPages.length === 0" class="col-span-full py-16 flex flex-col items-center justify-center text-center bg-white rounded-2xl border border-dashed border-slate-300">
                     <svg class="w-10 h-10 text-slate-300 mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
                     <p class="text-slate-500 font-medium">No matching tools found.</p>
                     <p class="text-sm text-slate-400 mt-1">Try adjusting your search term.</p>
                 </div>
 
-                <!-- Page Cards -->
+                <!-- Changed hover effects to use root brand color -->
                 <button 
                     v-for="page in filteredPages" 
                     :key="page.filename"
                     @click="openTool(page)"
-                    class="text-left group bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-900/5 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between cursor-pointer"
+                    class="text-left group bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-brand-300 hover:shadow-xl hover:shadow-brand-900/5 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between cursor-pointer"
                 >
                     <div>
                         <div class="flex items-start justify-between mb-3 gap-2">
-                            <h2 class="text-lg font-semibold text-slate-800 group-hover:text-indigo-900 transition-colors m-0 leading-tight">
+                            <h2 class="text-lg font-semibold text-slate-800 group-hover:text-brand-700 transition-colors m-0 leading-tight">
                                 {{ page.name }}
                             </h2>
-                            <span class="text-[11px] bg-indigo-50 text-indigo-600 border border-indigo-100/50 py-1 px-2.5 rounded-full font-medium tracking-wide whitespace-nowrap">
+                            <span class="text-[11px] bg-brand-50 text-brand-600 border border-brand-100 py-1 px-2.5 rounded-full font-medium tracking-wide whitespace-nowrap">
                                 {{ page.filename }}
                             </span>
                         </div>
@@ -61,7 +67,7 @@
                             {{ page.description }}
                         </p>
                     </div>
-                    <div class="mt-6 flex items-center text-sm font-semibold text-slate-700 group-hover:text-indigo-600 transition-colors">
+                    <div class="mt-6 flex items-center text-sm font-semibold text-slate-700 group-hover:text-brand-600 transition-colors">
                         Open tool 
                         <svg class="w-4 h-4 ml-1.5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -72,10 +78,10 @@
             </div>
         </div>
 
-        <div v-else class="max-w-[1200px] mx-auto">
+        <div v-else key="tool" class="max-w-[1200px] mx-auto w-full">
             <button 
                 @click="closeTool" 
-                class="mb-6 inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm hover:shadow"
+                class="mb-4 sm:mb-6 inline-flex items-center text-sm font-medium text-slate-500 hover:text-brand-600 transition-colors bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm hover:shadow cursor-pointer"
             >
                 <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -88,12 +94,15 @@
                 <component :is="activeTool.component" />
             </div>
         </div>
+        </Transition>
 
+        <div ref="transitionGrid" class="transition-grid"></div>
     </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, shallowRef, computed, onMounted, onUnmounted, markRaw } from 'vue';
+import gsap from 'gsap';
 
 const modules = import.meta.glob('./pages/*.vue', { eager: true });
 
@@ -106,12 +115,13 @@ const pages = Object.entries(modules).map(([filePath, module]) => {
         name: formattedName || baseName,
         filename: filename,
         description: `Auto-detected Vue component tool for ${formattedName}`,
-        component: module.default 
+        component: markRaw(module.default) 
     };
 });
 
 const searchQuery = ref('');
-const activeTool = ref(null);
+
+const activeTool = shallowRef(null);
 
 const filteredPages = computed(() => {
     const query = searchQuery.value.toLowerCase();
@@ -129,5 +139,78 @@ const openTool = (page) => {
 
 const closeTool = () => {
     activeTool.value = null;
+};
+
+const transitionGrid = ref(null);
+const blocks = ref([]);
+
+const createGrid = () => {
+    if (!transitionGrid.value) return;
+    
+    transitionGrid.value.innerHTML = '';
+    blocks.value = [];
+
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const blockSize = 60;
+
+    const columns = Math.ceil(width / blockSize);
+    const rows = Math.ceil(height / blockSize) + 1;
+
+    const offsetX = (width - columns * blockSize) / 2;
+    const offsetY = (height - rows * blockSize) / 2;
+
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < columns; c++) {
+            const block = document.createElement('div');
+            block.classList.add('transition-block');
+            block.style.width = `${blockSize}px`;
+            block.style.height = `${blockSize}px`;
+            block.style.left = `${c * blockSize + offsetX}px`;
+            block.style.top = `${r * blockSize + offsetY}px`;
+            
+            transitionGrid.value.appendChild(block);
+            blocks.value.push(block);
+        }
+    }
+
+    gsap.set(blocks.value, { opacity: 0 });
+};
+
+onMounted(() => {
+    createGrid();
+    window.addEventListener('resize', createGrid);
+});
+
+onUnmounted(() => {
+    window.removeEventListener('resize', createGrid);
+});
+
+const onLeave = (el, done) => {
+    gsap.to(blocks.value, {
+        opacity: 1,
+        duration: 0.05,
+        stagger: {
+            amount: 0.4,
+            from: 'random'
+        },
+        ease: 'power2.inOut',
+        onComplete: done
+    });
+};
+
+const onEnter = (el, done) => {
+    gsap.set(blocks.value, { opacity: 1 });
+    
+    gsap.to(blocks.value, {
+        opacity: 0,
+        duration: 0.05,
+        stagger: {
+            amount: 0.4,
+            from: 'random'
+        },
+        ease: 'power2.inOut',
+        onComplete: done
+    });
 };
 </script>
