@@ -59,9 +59,6 @@
                             <h2 class="text-lg font-semibold text-slate-800 group-hover:text-brand-700 transition-colors m-0 leading-tight">
                                 {{ page.name }}
                             </h2>
-                            <span class="text-[11px] bg-brand-50 text-brand-600 border border-brand-100 py-1 px-2.5 rounded-full font-medium tracking-wide whitespace-nowrap">
-                                {{ page.filename }}
-                            </span>
                         </div>
                         <p class="text-sm text-slate-500 m-0 leading-relaxed line-clamp-2">
                             {{ page.description }}

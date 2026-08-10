@@ -82,7 +82,6 @@
                 <option value="cover">Fill (Cover)</option>
             </select>
 
-            <!-- Preview Button -->
             <button 
                 class="col-span-2 sm:ml-auto w-full sm:w-auto bg-brand-600 text-white py-2.5 px-5 rounded-lg text-sm font-medium cursor-pointer transition-colors inline-flex justify-center items-center hover:bg-brand-700 disabled:opacity-60 disabled:cursor-not-allowed border-none shadow-sm" 
                 @click="generatePDF"
@@ -113,7 +112,7 @@
                     </div>
                     <div class="p-2 sm:p-3 flex justify-between items-center gap-1 sm:gap-2">
                         <p class="text-[11px] sm:text-[13px] text-slate-500 m-0 whitespace-nowrap overflow-hidden text-ellipsis flex-grow" :title="img.file.name">
-                        {{ img.file.name }}
+                            {{ img.file.name }}
                         </p>
                         <div class="flex gap-0.5 sm:gap-1 shrink-0">
                             <button @click="openResize(index)" class="bg-transparent text-slate-500 border-none p-1 sm:p-1.5 rounded cursor-pointer text-xs sm:text-sm transition-colors flex items-center justify-center hover:bg-slate-100 hover:text-slate-900" title="Resize">⤢</button>
@@ -159,14 +158,20 @@
             </div>
         </div>
 
-        <!-- PDF Preview Modal -->
         <div v-if="isPdfModalOpen" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-[1000] p-4">
             <div class="bg-white w-full max-w-[1100px] h-full sm:h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
                 <div class="p-3 sm:p-4 px-4 sm:px-6 border-b border-slate-200 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-3">
-                    <h2 class="m-0 text-lg font-semibold text-slate-800">PDF Preview</h2>
-                    <div class="flex w-full sm:w-auto gap-2 sm:gap-3">
-                        <button @click="closePdf" class="flex-1 sm:flex-none bg-white text-slate-700 border border-slate-200 py-2 sm:py-2.5 px-4 rounded-lg text-sm font-medium cursor-pointer transition-colors inline-flex justify-center items-center hover:bg-slate-50">Close</button>
-                        <button @click="downloadPdf" class="flex-1 sm:flex-none bg-brand-600 text-white py-2 sm:py-2.5 px-4 rounded-lg text-sm font-medium cursor-pointer transition-colors inline-flex justify-center items-center hover:bg-brand-700 border-none shadow-sm">Download PDF</button>
+                    <h2 class="m-0 text-lg font-semibold text-slate-800 shrink-0">PDF Preview</h2>
+                    
+                    <div class="flex w-full sm:w-auto gap-2 sm:gap-3 items-center">
+                        <input 
+                            type="text" 
+                            v-model="customFileName" 
+                            placeholder="Custom file name..." 
+                            class="flex-1 sm:w-auto bg-slate-50 border border-slate-200 py-2 sm:py-2.5 px-3 rounded-lg text-sm text-slate-900 focus:border-brand-500 outline-none"
+                        >
+                        <button @click="closePdf" class="bg-white text-slate-700 border border-slate-200 py-2 sm:py-2.5 px-4 rounded-lg text-sm font-medium cursor-pointer transition-colors hover:bg-slate-50">Close</button>
+                        <button @click="downloadPdf" class="bg-brand-600 text-white py-2 sm:py-2.5 px-4 rounded-lg text-sm font-medium cursor-pointer transition-colors hover:bg-brand-700 border-none shadow-sm whitespace-nowrap">Download PDF</button>
                     </div>
                 </div>
                 <div class="flex-1 bg-slate-200 flex flex-col">
@@ -207,6 +212,7 @@ const images = ref([]);
 const isProcessing = ref(false);
 const statusMessage = ref("");
 const previewGrid = ref(null);
+const customFileName = ref("");
 
 const settings = reactive({
     pageSize: 'A4',
@@ -295,6 +301,10 @@ onMounted(() => {
 
 const handleFileUpload = async (e) => {
     if (e.target.files.length === 0) return;
+    
+    if (!customFileName.value) {
+        customFileName.value = e.target.files[0].name.replace(/\.[^/.]+$/, "");
+    }
     
     statusMessage.value = "Processing images (this may take a moment)...";
     isProcessing.value = true;
@@ -581,7 +591,10 @@ const downloadPdf = () => {
     if (!currentPdfBlob) return;
     const link = document.createElement("a");
     link.href = URL.createObjectURL(currentPdfBlob);
-    link.download = "Converted_Images.pdf";
+    
+    const finalFilename = customFileName.value.trim() ? `${customFileName.value.trim()}.pdf` : "Converted_Images.pdf";
+    link.download = finalFilename;
+    
     link.click();
 };
 </script>
