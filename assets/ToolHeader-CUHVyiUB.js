@@ -1,1 +1,0 @@
-import{C as e,c as t,g as n,m as r,o as i}from"./index-BArR4h8Y.js";var a={class:`flex items-center gap-3 mb-6`},o={class:`text-xl sm:text-2xl font-semibold tracking-tight m-0`},s={__name:`ToolHeader`,props:{title:{type:String,required:!0}},setup(s){return(c,l)=>(r(),t(`header`,a,[n(c.$slots,`icon`),i(`h1`,o,e(s.title),1)]))}};export{s as t};
