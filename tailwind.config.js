@@ -1,4 +1,3 @@
-// tailwind.config.js
 export const purge = [
     './index.html', 
     './src/**/*.{vue,js,ts,jsx,tsx}'

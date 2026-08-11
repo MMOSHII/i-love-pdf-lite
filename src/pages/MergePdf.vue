@@ -2,16 +2,18 @@
     <div class="py-6 sm:py-10 px-4 sm:px-5 w-full">
         <div class="max-w-[1000px] mx-auto">
         
-        <header class="flex items-center gap-3 mb-6">
-            <svg class="w-7 h-7 sm:w-8 sm:h-8 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <path d="M9 15v-4"></path>
-                <path d="M12 15v-4"></path>
-                <path d="M15 15v-4"></path>
-            </svg>
-            <h1 class="text-xl sm:text-2xl font-semibold tracking-tight m-0">Merge PDF Files</h1>
-        </header>
+        <!-- Extracted Tool Header -->
+        <ToolHeader title="Merge PDF Files">
+            <template #icon>
+                <svg class="w-7 h-7 sm:w-8 sm:h-8 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <path d="M9 15v-4"></path>
+                    <path d="M12 15v-4"></path>
+                    <path d="M15 15v-4"></path>
+                </svg>
+            </template>
+        </ToolHeader>
 
         <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-3 items-center mb-6">
             <div class="relative overflow-hidden block w-full sm:w-auto">
@@ -50,6 +52,7 @@
 
         <div v-if="statusMessage" class="mb-4 text-sm font-medium text-slate-500" v-html="statusMessage"></div>
             
+            <!-- Grid container for useSortable -->
             <div ref="previewGrid" class="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 sm:gap-5">
                 <div 
                     v-for="(item, index) in files" 
@@ -90,37 +93,27 @@
             </div>
         </div>
 
-        <!-- PDF Preview Modal -->
-        <div v-if="isPdfModalOpen" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-[1000] p-4">
-            <div class="bg-white w-full max-w-[1100px] h-full sm:h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-                <div class="p-3 sm:p-4 px-4 sm:px-6 border-b border-slate-200 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-3">
-                    <h2 class="m-0 text-lg font-semibold text-slate-800 shrink-0">PDF Preview</h2>
-                    
-                    <div class="flex w-full sm:w-auto gap-2 sm:gap-3 items-center">
-                        <input 
-                            type="text" 
-                            v-model="customFileName" 
-                            placeholder="Custom file name..." 
-                            class="flex-1 sm:w-auto bg-slate-50 border border-slate-200 py-2 sm:py-2.5 px-3 rounded-lg text-sm text-slate-900 focus:border-brand-500 outline-none"
-                        >
-                        <button @click="closePdf" class="bg-white text-slate-700 border border-slate-200 py-2 sm:py-2.5 px-4 rounded-lg text-sm font-medium cursor-pointer transition-colors hover:bg-slate-50">Close</button>
-                        <button @click="downloadPdf" class="bg-brand-600 text-white py-2 sm:py-2.5 px-4 rounded-lg text-sm font-medium cursor-pointer transition-colors hover:bg-brand-700 border-none shadow-sm whitespace-nowrap">Download PDF</button>
-                    </div>
-                </div>
-                <div class="flex-1 bg-slate-200 flex flex-col">
-                    <iframe :src="pdfUrl" class="w-full h-full border-none"></iframe>
-                </div>
-            </div>
-        </div>
+        <!-- Extracted PDF Preview Modal Component -->
+        <PdfPreviewModal 
+            :show="isPdfModalOpen" 
+            :pdfUrl="pdfUrl" 
+            :pdfBlob="currentPdfBlob"
+            v-model:fileName="customFileName"
+            @close="closePdf"
+        />
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import Sortable from 'sortablejs';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { PDFDocument } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.mjs?url';
+
+import ToolHeader from '../components/ToolHeader.vue';
+import PdfPreviewModal from '../components/PdfPreviewModal.vue';
+import { useSortable } from '../composables/useSortable';
+import { formatBytes } from '../utils/helpers';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
@@ -134,24 +127,11 @@ const isPdfModalOpen = ref(false);
 const pdfUrl = ref("");
 let currentPdfBlob = null;
 
-const formatBytes = (bytes) => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-};
+useSortable(previewGrid, files);
 
-onMounted(() => {
-    if (previewGrid.value) {
-        new Sortable(previewGrid.value, {
-            animation: 150,
-            ghostClass: 'sortable-ghost',
-            onEnd(evt) {
-                const item = files.value.splice(evt.oldIndex, 1)[0];
-                files.value.splice(evt.newIndex, 0, item);
-            }
-        });
+onUnmounted(() => {
+    if (pdfUrl.value) {
+        URL.revokeObjectURL(pdfUrl.value);
     }
 });
 
@@ -230,6 +210,10 @@ const mergePDFs = async () => {
     statusMessage.value = "Merging PDFs...";
     isProcessing.value = true;
     
+    if (pdfUrl.value) {
+        URL.revokeObjectURL(pdfUrl.value);
+    }
+    
     try {
         const mergedPdf = await PDFDocument.create();
 
@@ -261,17 +245,5 @@ const mergePDFs = async () => {
 
 const closePdf = () => {
     isPdfModalOpen.value = false;
-    pdfUrl.value = "";
-};
-
-const downloadPdf = () => {
-    if (!currentPdfBlob) return;
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(currentPdfBlob);
-    
-    const finalFilename = customFileName.value.trim() ? `${customFileName.value.trim()}.pdf` : "merged_document.pdf";
-    link.download = finalFilename;
-    
-    link.click();
 };
 </script>

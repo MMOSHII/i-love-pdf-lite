@@ -2,15 +2,16 @@
     <div class="py-6 sm:py-10 px-4 sm:px-5 w-full">
         <div class="max-w-[1000px] mx-auto">
         
-        <header class="flex items-center gap-3 mb-6">
-            <svg class="w-7 h-7 sm:w-8 sm:h-8 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <rect x="8" y="12" width="8" height="6" rx="1"></rect>
-                <path d="M10 12v6"></path>
-            </svg>
-            <h1 class="text-xl sm:text-2xl font-semibold tracking-tight m-0">PDF to Image Converter</h1>
-        </header>
+        <ToolHeader title="PDF to Image Converter">
+            <template #icon>
+                <svg class="w-7 h-7 sm:w-8 sm:h-8 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <rect x="8" y="12" width="8" height="6" rx="1"></rect>
+                    <path d="M10 12v6"></path>
+                </svg>
+            </template>
+        </ToolHeader>
 
         <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-3 items-center mb-6">
             
@@ -91,10 +92,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import * as pdfjsLib from 'pdfjs-dist';
-
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
+import ToolHeader from '../components/ToolHeader.vue';
 
 onMounted(() => {
     pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -106,12 +107,32 @@ const statusMessage = ref("");
 const processingMode = ref('render');
 const customFileName = ref('');
 
+const canvasToBlobUrl = (canvas, type, quality) => {
+    return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+            resolve(URL.createObjectURL(blob));
+        }, type, quality);
+    });
+};
+
+const cleanupUrls = () => {
+    generatedImages.value.forEach(item => {
+        if (item.pngUrl) URL.revokeObjectURL(item.pngUrl);
+        if (item.jpgUrl) URL.revokeObjectURL(item.jpgUrl);
+    });
+};
+
+onUnmounted(() => {
+    cleanupUrls();
+});
+
 const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     customFileName.value = file.name.replace(/\.[^/.]+$/, "");
 
+    cleanupUrls();
     generatedImages.value = [];
     isProcessing.value = true;
     statusMessage.value = "Reading PDF document...";
@@ -125,7 +146,7 @@ const handleFileUpload = async (e) => {
             
             for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
-                const viewport = page.getViewport({ scale: 2 }); // Scale 2 for higher resolution
+                const viewport = page.getViewport({ scale: 2 });
 
                 const canvas = document.createElement("canvas");
                 const ctx = canvas.getContext("2d");
@@ -138,7 +159,7 @@ const handleFileUpload = async (e) => {
                     viewport: viewport
                 }).promise;
 
-                const pngUrl = canvas.toDataURL("image/png");
+                const pngUrl = await canvasToBlobUrl(canvas, "image/png");
 
                 const jpgCanvas = document.createElement("canvas");
                 jpgCanvas.width = canvas.width;
@@ -147,7 +168,8 @@ const handleFileUpload = async (e) => {
                 jpgCtx.fillStyle = "white";
                 jpgCtx.fillRect(0, 0, jpgCanvas.width, jpgCanvas.height);
                 jpgCtx.drawImage(canvas, 0, 0);
-                const jpgUrl = jpgCanvas.toDataURL("image/jpeg", 0.95);
+                
+                const jpgUrl = await canvasToBlobUrl(jpgCanvas, "image/jpeg", 0.95);
 
                 generatedImages.value.push({
                     id: `page-${i}`,
@@ -203,7 +225,7 @@ const handleFileUpload = async (e) => {
                                 continue;
                             }
 
-                            const pngUrl = canvas.toDataURL("image/png");
+                            const pngUrl = await canvasToBlobUrl(canvas, "image/png");
                             
                             const jpgCanvas = document.createElement("canvas");
                             jpgCanvas.width = canvas.width;
@@ -212,7 +234,8 @@ const handleFileUpload = async (e) => {
                             jpgCtx.fillStyle = "white";
                             jpgCtx.fillRect(0, 0, jpgCanvas.width, jpgCanvas.height);
                             jpgCtx.drawImage(canvas, 0, 0);
-                            const jpgUrl = jpgCanvas.toDataURL("image/jpeg", 0.95);
+                            
+                            const jpgUrl = await canvasToBlobUrl(jpgCanvas, "image/jpeg", 0.95);
 
                             generatedImages.value.push({
                                 id: `extracted-${imageCounter}`,

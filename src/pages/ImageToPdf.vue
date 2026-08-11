@@ -2,15 +2,16 @@
     <div class="py-6 sm:py-10 px-4 sm:px-5 w-full">
         <div class="max-w-[1000px] mx-auto">
         
-        <header class="flex items-center gap-3 mb-6">
-            <svg class="w-7 h-7 sm:w-8 sm:h-8 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <circle cx="10" cy="13" r="2"></circle>
-                <path d="m20 17-1.89-1.89a1.5 1.5 0 0 0-2.12 0L14 17"></path>
-            </svg>
-            <h1 class="text-xl sm:text-2xl font-semibold tracking-tight m-0">Image to PDF Converter</h1>
-        </header>
+        <ToolHeader title="Image to PDF Converter">
+            <template #icon>
+                <svg class="w-7 h-7 sm:w-8 sm:h-8 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <circle cx="10" cy="13" r="2"></circle>
+                    <path d="m20 17-1.89-1.89a1.5 1.5 0 0 0-2.12 0L14 17"></path>
+                </svg>
+            </template>
+        </ToolHeader>
 
         <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 grid grid-cols-2 sm:flex sm:flex-wrap gap-3 items-center mb-6">
             <div class="col-span-2 sm:col-span-1 flex gap-2 w-full sm:w-auto">
@@ -125,7 +126,6 @@
             </div>
         </div>
 
-        <!-- Resize Modal -->
         <div v-if="isResizeModalOpen" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-[1000] p-4">
             <div class="bg-white w-full max-w-[400px] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
                 <div class="p-4 sm:p-5 border-b border-slate-200">
@@ -158,29 +158,14 @@
             </div>
         </div>
 
-        <div v-if="isPdfModalOpen" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-[1000] p-4">
-            <div class="bg-white w-full max-w-[1100px] h-full sm:h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-                <div class="p-3 sm:p-4 px-4 sm:px-6 border-b border-slate-200 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-3">
-                    <h2 class="m-0 text-lg font-semibold text-slate-800 shrink-0">PDF Preview</h2>
-                    
-                    <div class="flex w-full sm:w-auto gap-2 sm:gap-3 items-center">
-                        <input 
-                            type="text" 
-                            v-model="customFileName" 
-                            placeholder="Custom file name..." 
-                            class="flex-1 sm:w-auto bg-slate-50 border border-slate-200 py-2 sm:py-2.5 px-3 rounded-lg text-sm text-slate-900 focus:border-brand-500 outline-none"
-                        >
-                        <button @click="closePdf" class="bg-white text-slate-700 border border-slate-200 py-2 sm:py-2.5 px-4 rounded-lg text-sm font-medium cursor-pointer transition-colors hover:bg-slate-50">Close</button>
-                        <button @click="downloadPdf" class="bg-brand-600 text-white py-2 sm:py-2.5 px-4 rounded-lg text-sm font-medium cursor-pointer transition-colors hover:bg-brand-700 border-none shadow-sm whitespace-nowrap">Download PDF</button>
-                    </div>
-                </div>
-                <div class="flex-1 bg-slate-200 flex flex-col">
-                    <iframe :src="pdfUrl" class="w-full h-full border-none"></iframe>
-                </div>
-            </div>
-        </div>
+        <PdfPreviewModal 
+            :show="isPdfModalOpen" 
+            :pdfUrl="pdfUrl" 
+            :pdfBlob="currentPdfBlob"
+            v-model:fileName="customFileName"
+            @close="closePdf"
+        />
 
-        <!-- Crop Modal -->
         <div v-show="isCropModalOpen" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-[1000] p-4">
             <div class="bg-white w-full max-w-[800px] h-[90vh] sm:h-[85vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
                 <div class="p-3 sm:p-4 px-4 sm:px-6 border-b border-slate-200 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-3">
@@ -201,12 +186,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick, computed } from 'vue';
-import Sortable from 'sortablejs';
-import heic2any from 'heic2any';
-import Cropper from 'cropperjs';
+import { ref, reactive, onMounted, nextTick, computed, onUnmounted } from 'vue';
 import { PDFDocument } from 'pdf-lib';
-import 'cropperjs/dist/cropper.css';
+
+import ToolHeader from '../components/ToolHeader.vue';
+import PdfPreviewModal from '../components/PdfPreviewModal.vue';
+import { useSortable } from '../composables/useSortable';
+import { formatBytes } from '../utils/helpers';
 
 const images = ref([]);
 const isProcessing = ref(false);
@@ -275,28 +261,17 @@ const cropImageElement = ref(null);
 let cropperInstance = null;
 let currentCropIndex = -1;
 
-const formatBytes = (bytes) => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-};
+useSortable(previewGrid, images, {
+    onEnd: () => saveState()
+});
 
 onMounted(() => {
     saveState();
+});
 
-    if (previewGrid.value) {
-        new Sortable(previewGrid.value, {
-            animation: 150,
-            ghostClass: 'sortable-ghost',
-            onEnd(evt) {
-                const item = images.value.splice(evt.oldIndex, 1)[0];
-                images.value.splice(evt.newIndex, 0, item);
-                saveState();
-            }
-        });
-    }
+onUnmounted(() => {
+    images.value.forEach(img => URL.revokeObjectURL(img.url));
+    if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value);
 });
 
 const handleFileUpload = async (e) => {
@@ -315,6 +290,8 @@ const handleFileUpload = async (e) => {
 
         if (fileNameLower.endsWith('.heic') || fileNameLower.endsWith('.heif')) {
             try {
+                const heic2any = (await import('heic2any')).default;
+                
                 const convertedBlob = await heic2any({
                     blob: file,
                     toType: "image/jpeg",
@@ -346,11 +323,11 @@ const rotateImage = (index) => {
 };
 
 const removeImage = (index) => {
+    URL.revokeObjectURL(images.value[index].url);
     images.value.splice(index, 1);
     saveState();
 };
 
-// --- Resize Logic ---
 const openResize = (index) => {
     resizeTargetIndex.value = index;
     resizeSettings.percentage = 50; 
@@ -391,6 +368,7 @@ const applyResize = async () => {
                 canvas.toBlob((blob) => {
                     const file = new File([blob], item.file.name, { type: "image/jpeg" });
                     
+                    URL.revokeObjectURL(item.url);
                     item.file = file;
                     item.url = URL.createObjectURL(file);
                     resolve();
@@ -405,12 +383,16 @@ const applyResize = async () => {
     saveState();
 };
 
-// --- Cropping Logic ---
-const openCrop = (index) => {
+const openCrop = async (index) => {
     currentCropIndex = index;
     cropImageSrc.value = images.value[index].url;
     isCropModalOpen.value = true;
     
+    const [{ default: Cropper }] = await Promise.all([
+        import('cropperjs'),
+        import('cropperjs/dist/cropper.css')
+    ]);
+
     nextTick(() => {
         if (cropperInstance) cropperInstance.destroy();
         if (cropImageElement.value) {
@@ -442,6 +424,7 @@ const applyCrop = () => {
         const file = new File([blob], images.value[currentCropIndex].file.name, { type: "image/jpeg" });
         const url = URL.createObjectURL(file);
         
+        URL.revokeObjectURL(images.value[currentCropIndex].url);
         images.value[currentCropIndex].file = file;
         images.value[currentCropIndex].url = url;
         images.value[currentCropIndex].rotation = 0; 
@@ -585,16 +568,5 @@ const generatePDF = async () => {
 const closePdf = () => {
     isPdfModalOpen.value = false;
     pdfUrl.value = "";
-};
-
-const downloadPdf = () => {
-    if (!currentPdfBlob) return;
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(currentPdfBlob);
-    
-    const finalFilename = customFileName.value.trim() ? `${customFileName.value.trim()}.pdf` : "Converted_Images.pdf";
-    link.download = finalFilename;
-    
-    link.click();
 };
 </script>

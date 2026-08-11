@@ -98,12 +98,11 @@
 </template>
 
 <script setup>
-import { ref, shallowRef, computed, onMounted, onUnmounted, markRaw } from 'vue';
-import gsap from 'gsap';
+import { ref, shallowRef, computed, onMounted, onUnmounted, markRaw, defineAsyncComponent } from 'vue';
 
-const modules = import.meta.glob('./pages/*.vue', { eager: true });
+const modules = import.meta.glob('./pages/*.vue');
 
-const pages = Object.entries(modules).map(([filePath, module]) => {
+const pages = Object.entries(modules).map(([filePath, resolver]) => {
     const filename = filePath.split('/').pop();
     const baseName = filename.replace('.vue', '');
     const formattedName = baseName.replace(/([A-Z])/g, ' $1').trim();
@@ -112,7 +111,7 @@ const pages = Object.entries(modules).map(([filePath, module]) => {
         name: formattedName || baseName,
         filename: filename,
         description: `Auto-detected Vue component tool for ${formattedName}`,
-        component: markRaw(module.default) 
+        component: markRaw(defineAsyncComponent(resolver)) 
     };
 });
 
@@ -170,8 +169,6 @@ const createGrid = () => {
             blocks.value.push(block);
         }
     }
-
-    gsap.set(blocks.value, { opacity: 0 });
 };
 
 onMounted(() => {
@@ -184,30 +181,36 @@ onUnmounted(() => {
 });
 
 const onLeave = (el, done) => {
-    gsap.to(blocks.value, {
-        opacity: 1,
-        duration: 0.05,
-        stagger: {
-            amount: 0.4,
-            from: 'random'
-        },
-        ease: 'power2.inOut',
-        onComplete: done
+    const totalDuration = 400;
+    const promises = blocks.value.map((block) => {
+        const delay = Math.random() * (totalDuration * 0.8);
+        return block.animate([
+            { opacity: 0 },
+            { opacity: 1 }
+        ], {
+            duration: 50,
+            delay: delay,
+            fill: 'forwards',
+            easing: 'ease-in-out'
+        }).finished;
     });
+    Promise.all(promises).then(done);
 };
 
 const onEnter = (el, done) => {
-    gsap.set(blocks.value, { opacity: 1 });
-    
-    gsap.to(blocks.value, {
-        opacity: 0,
-        duration: 0.05,
-        stagger: {
-            amount: 0.4,
-            from: 'random'
-        },
-        ease: 'power2.inOut',
-        onComplete: done
+    const totalDuration = 400;
+    const promises = blocks.value.map((block) => {
+        const delay = Math.random() * (totalDuration * 0.8);
+        return block.animate([
+            { opacity: 1 },
+            { opacity: 0 }
+        ], {
+            duration: 50,
+            delay: delay,
+            fill: 'forwards',
+            easing: 'ease-in-out'
+        }).finished;
     });
+    Promise.all(promises).then(done);
 };
 </script>
