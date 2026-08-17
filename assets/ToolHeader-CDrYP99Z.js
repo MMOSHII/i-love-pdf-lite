@@ -1,0 +1,1 @@
+import{D as e,_ as t,c as n,u as r,y as i}from"./index-1NddHrxu.js";var a={class:`flex items-center gap-3 mb-6`},o={class:`text-xl sm:text-2xl font-semibold tracking-tight m-0`},s={__name:`ToolHeader`,props:{title:{type:String,required:!0}},setup(s){return(c,l)=>(t(),r(`header`,a,[i(c.$slots,`icon`),n(`h1`,o,e(s.title),1)]))}};export{s as t};
