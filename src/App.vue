@@ -47,7 +47,6 @@
                     <p class="text-sm text-slate-400 mt-1">Try adjusting your search term.</p>
                 </div>
 
-                <!-- Changed hover effects to use root brand color -->
                 <button 
                     v-for="page in filteredPages" 
                     :key="page.filename"
@@ -100,6 +99,12 @@
 <script setup>
 import { ref, shallowRef, computed, onMounted, onUnmounted, markRaw, defineAsyncComponent } from 'vue';
 
+const toolDescriptions = {
+    'PdfToImage.vue': 'Convert PDF pages or extract embedded images into high-quality PNG or JPG files.',
+    'ImageToPdf.vue': 'Upload, crop, resize, and combine multiple images into a single organized PDF document.',
+    'MergeOrSplitPdf.vue': 'Easily combine and reorder multiple PDF files together into one continuous document.'
+};
+
 const modules = import.meta.glob('./pages/*.vue');
 
 const pages = Object.entries(modules).map(([filePath, resolver]) => {
@@ -110,7 +115,7 @@ const pages = Object.entries(modules).map(([filePath, resolver]) => {
     return {
         name: formattedName || baseName,
         filename: filename,
-        description: `Auto-detected Vue component tool for ${formattedName}`,
+        description: toolDescriptions[filename] || `Launch the ${formattedName} tool.`,
         component: markRaw(defineAsyncComponent(resolver)) 
     };
 });

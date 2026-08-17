@@ -1,6 +1,6 @@
 {
     "name": "i-love-pdf",
-    "version": "0.0.0",
+    "version": "0.0.8",
     "private": true,
     "type": "module",
     "scripts": {
@@ -11,10 +11,12 @@
     },
     "dependencies": {
         "cropperjs": "^1.6.2",
+        "docx": "^9.5.1",
         "heic2any": "^0.0.4",
         "pdf-lib": "^1.17.1",
         "pdfjs-dist": "^6.2.108",
         "sortablejs": "^1.15.7",
+        "tesseract.js": "^7.0.0",
         "vue": "^3.5.40"
     },
     "devDependencies": {
